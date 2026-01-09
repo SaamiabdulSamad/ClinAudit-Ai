@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # 1. THE VECTOR DATABASE (Qdrant)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: factguard-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      # Persistent storage: Your medical data survives container restarts
+      - ./qdrant_data:/qdrant/storage:z
+    restart: always
+    networks:
+      - factguard-net
+
+  # 2. THE AGENTIC API (FastAPI + Gunicorn)
+  api:
+    build: .
+    container_name: factguard-api
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      # Tells the Python code where to find the other containers
+      - QDRANT_HOST=qdrant 
+      - INNGEST_DEV=1
+      # 🚀 THE CRITICAL FIX: The SDK looks for this specific variable
+      - INNGEST_BASE_URL=http://inngest:8288 
+    depends_on:
+      - qdrant
+    restart: always
+    networks:
+      - factguard-net
+
+  # 3. THE EVENT BUS (Inngest Dev Server)
+  inngest:
+    image: inngest/inngest:latest
+    container_name: factguard-inngest
+    ports:
+      - "8288:8288"
+    # Explicitly calls the 'inngest' binary to fix PATH errors
+    command: ["inngest", "dev", "-u", "http://api:8001/api/inngest", "--host", "0.0.0.0"]
+    depends_on:
+      - api
+    networks:
+      - factguard-net
+
+networks:
+  factguard-net:
+    driver: bridge
