@@ -1,20 +1,21 @@
-# 1. IMMEDIATE ENVIRONMENT & WARNING CONTROL
+# 1. IMMEDIATE ENVIRONMENT CONTROL (MUST BE FIRST)
 import os
+from dotenv import load_dotenv
+load_dotenv() # 👈 Load keys BEFORE importing internal agent modules
+
 import warnings
 import time
 import hashlib
 import json
 import redis
-from dotenv import load_dotenv
 
-# Load env vars first
-load_dotenv()
+# Suppress noisy tool warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="langchain_tavily")
 
 # 2. STANDARD LIBRARY & ASYNC IMPORTS
 import uvicorn
 import anyio
-from pydantic import BaseModel # 👈 Added for professional JSON handling
+from pydantic import BaseModel
 
 # 3. THIRD PARTY IMPORTS
 import inngest
@@ -27,7 +28,7 @@ from slowapi.errors import RateLimitExceeded
 from langchain_core.messages import HumanMessage
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
-# 4. INTERNAL IMPORTS
+# 4. INTERNAL IMPORTS (SAFE TO IMPORT AFTER load_dotenv)
 try:
     from src.agents.graph import app as agent_graph
     from src.utils.metrics import AUDIT_FAITHFULNESS_SCORE, HALLUCINATION_COUNT, AGENT_LOOP_LATENCY
@@ -38,8 +39,16 @@ except ImportError as e:
 # -------------------------
 # Redis & Shared State Setup (THE AWS FOUNDATION)
 # -------------------------
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+RAW_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# Architect Guard: Force rediss:// for Upstash/SSL cloud environments
+if "upstash.io" in RAW_REDIS_URL and not RAW_REDIS_URL.startswith("rediss://"):
+    REDIS_URL = RAW_REDIS_URL.replace("redis://", "rediss://")
+else:
+    REDIS_URL = RAW_REDIS_URL
+
+# Establish connection with auto-retry logic
+redis_client = redis.from_url(REDIS_URL, decode_responses=True, socket_timeout=10)
 
 # -------------------------
 # Security & Rate Limiting (THE ARMOR)
@@ -52,6 +61,8 @@ async def get_api_key(api_key: str = Security(api_key_header)):
     expected_key = os.getenv("FACTGUARD_API_KEY", "dev-secret-123")
     if api_key == expected_key:
         return api_key
+    # Brutal Truth: Log the failure for CloudWatch observability
+    print(f"❌ AUTH FAILURE: Received '{api_key}'")
     raise HTTPException(status_code=403, detail="Unauthorized: Invalid API Key")
 
 limiter = Limiter(key_func=get_remote_address, storage_uri=REDIS_URL)
@@ -61,7 +72,7 @@ limiter = Limiter(key_func=get_remote_address, storage_uri=REDIS_URL)
 # -------------------------
 class ClaimRequest(BaseModel):
     """Defines the professional JSON structure for incoming claims."""
-    claim_text: str # 👈 Swagger will now show a JSON box for this
+    claim_text: str
 
 # -------------------------
 # Semantic Caching Logic
@@ -78,6 +89,7 @@ def get_cached_audit(claim: str):
 def set_cached_audit(claim: str, response: dict):
     cache_key = f"audit:{hashlib.md5(claim.lower().strip().encode()).hexdigest()}"
     try:
+        # Cache for 1 hour to reduce token costs
         redis_client.setex(cache_key, 3600, json.dumps(response))
     except Exception as e:
         print(f"⚠️ Redis Write Error: {e}")
@@ -131,18 +143,18 @@ async def health_check():
     try:
         redis_client.ping()
         return {"status": "healthy", "redis": "connected"}
-    except:
-        return {"status": "degraded", "redis": "disconnected"}
+    except Exception as e:
+        return {"status": "degraded", "redis": f"disconnected: {str(e)}"}
 
 @app.post("/analyze")
 @limiter.limit("10/minute")
 async def analyze_claim(
     request: Request, 
-    payload: ClaimRequest, # 👈 CHANGED: Uses Pydantic for JSON Body
+    payload: ClaimRequest, 
     api_key: str = Depends(get_api_key)
 ):
     start_time = time.time()
-    claim = payload.claim_text # 👈 Extract text from the payload object
+    claim = payload.claim_text
     
     # 1. SHARED CACHE CHECK
     cached_result = get_cached_audit(claim)
@@ -160,6 +172,8 @@ async def analyze_claim(
         verdict = audit_data.get("verdict", "FAIL")
         
         latency = time.time() - start_time
+        
+        # Log metrics for Prometheus
         AGENT_LOOP_LATENCY.observe(latency)
         AUDIT_FAITHFULNESS_SCORE.labels(claim_type="medical").set(score)
         
@@ -174,7 +188,7 @@ async def analyze_claim(
             "confidence": confidence,
             "audit_score": score,
             "latency": f"{latency:.2f}s",
-            "reasoning": result["messages"][-1].content,
+            "reasoning": result["messages"][-1].content if result.get("messages") else "No reasoning available.",
             "status": "success"
         }
 
@@ -183,7 +197,7 @@ async def analyze_claim(
 
         return response_body
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Agentic Execution Failed: {str(e)}")
 
 # -------------------------
 # STARTUP
@@ -195,4 +209,5 @@ except Exception as e:
     print(f"❌ Inngest Registration Failed: {e}")
 
 if __name__ == "__main__":
+    # Standard production port
     uvicorn.run("src.main:app", host="0.0.0.0", port=8001, reload=True)
