@@ -1,0 +1,25 @@
+[project]
+name = "factguard-ai"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[standard]>=0.127.0",
+    "inngest>=0.5.13",
+    "langchain-community>=0.4.1",
+    "langchain-openai>=1.1.6",
+    "langchain-tavily>=0.2.15",
+    "langgraph>=1.0.5",
+    "limits>=5.6.0",
+    "llama-index>=0.14.10",
+    "llama-index-core>=0.14.10",
+    "llama-index-readers-file>=0.5.5",
+    "openai>=2.14.0",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "qdrant-client>=1.16.2",
+    "slowapi>=0.1.9",
+    "streamlit>=1.52.2",
+    "tavily-python>=0.7.17",
+    "typing-extensions>=4.15.0",
+    "uvicorn>=0.40.0",
+]
