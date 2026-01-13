@@ -12,8 +12,7 @@ from src.agents.tavily_search import web_search_node
 # 📚 NEW: PubMed Integration Imports
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
-from langchain_core.tools import create_retriever_tool
-# -------------------------
+from langchain_core.tools import create_retriever_tool# -------------------------
 # 1. Initialize the Specialized Knowledge Base
 # -------------------------
 # We initialize this globally so the graph doesn't re-connect on every call
