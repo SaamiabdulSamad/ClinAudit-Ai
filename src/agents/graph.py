@@ -1,6 +1,8 @@
 import sys
 import os
-# Fix the pathing so it works in both local and AWS environments
+
+# 1. ROOT PATH FIX: Ensures 'agents' and 'workflows' are findable
+# This handles the "No module named src" error by looking at the project root
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from langgraph.graph import StateGraph, END, START
@@ -14,41 +16,38 @@ from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
 
 # -------------------------
-# 1. Resilient Knowledge Base Initialization
+# 2. Resilient Knowledge Base Initialization
 # -------------------------
 def get_vectorstore():
     """
-    Lazy loader for Qdrant. This prevents the 'Exit Code 3' crash 
-    if the network is slow during container boot.
+    DECOUPLED LOADER: Prevents the app from crashing during boot.
+    If Qdrant is down, the app stays alive so you can check logs.
     """
     url = os.getenv("QDRANT_URL")
     api_key = os.getenv("QDRANT_KEY")
     
+    # Validation check to catch empty variables before they crash the client
     if not url or "qdrant.io" not in url:
-        print("⚠️ QDRANT_URL is missing or malformed. Check AWS Variables.")
+        print("⚠️ QDRANT_URL is missing or malformed in AWS Environment.")
         return None
 
     try:
+        # Port 6333 is required for Qdrant Cloud Python Client
         vs = QdrantVectorStore.from_existing_collection(
             embedding=OpenAIEmbeddings(),
             collection_name="pubmed_docs", 
             url=url,
             api_key=api_key,
         )
-        print("✅ Qdrant Connection Established")
+        print("✅ PROD: Qdrant Handshake Successful")
         return vs
     except Exception as e:
-        print(f"❌ Qdrant Connection Failed: {e}")
+        # This print will finally show up in your "Application Logs"
+        print(f"❌ PROD ERROR: Qdrant Connection Failed -> {e}")
         return None
 
-# Initialize outside of the nodes but wrapped in a check
+# Initialize as a global variable but safely handled via the function
 vectorstore = get_vectorstore()
-
-# -------------------------
-# 2. Graph Support Nodes
-# -------------------------
-def increment_retry(state: AgentState) -> AgentState:
-    return {"retry_count": state.get("retry_count", 0) + 1}
 
 # -------------------------
 # 3. Initialize the State Machine
@@ -58,7 +57,7 @@ workflow = StateGraph(AgentState)
 workflow.add_node("local_research", researcher_node) 
 workflow.add_node("auditor", auditor_node)
 workflow.add_node("web_research", web_search_node)
-workflow.add_node("increment_retry", increment_retry)
+workflow.add_node("increment_retry", lambda state: {"retry_count": state.get("retry_count", 0) + 1})
 
 workflow.add_edge(START, "local_research")
 workflow.add_edge("local_research", "auditor")
