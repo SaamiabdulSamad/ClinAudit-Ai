@@ -8,7 +8,7 @@ KEY = "your-long-api-key-string"
 print(f"📡 Attempting to handshake with Qdrant at: {URL}")
 
 try:
-    # 2. INITIALIZE CLIENT
+    # 2. INITßIALIZE CLIENT
     client = QdrantClient(url=URL, api_key=KEY)
     
     # 3. VERIFY CONNECTION

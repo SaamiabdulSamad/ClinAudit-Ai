@@ -1,10 +1,8 @@
-from typing import TypedDict, Annotated, List, Sequence
+from typing import Annotated, TypedDict, List
 from langchain_core.messages import BaseMessage
-from langgraph.graph.message import add_messages
+import operator
 
 class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], add_messages]
-    patient_claim: str
-    evidence: List[str]
-    verdict: str  # New: "VALID", "INVALID", or "INSUFFICIENT_DATA"
-    retry_count: int
+    messages: Annotated[List[BaseMessage], operator.add]
+    audit_score: float
+    needs_revision: bool
