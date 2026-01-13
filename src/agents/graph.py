@@ -1,9 +1,8 @@
 import sys
 import os
 
-# 1. ROOT PATH FIX: Ensures 'agents' and 'workflows' are findable
-# This handles the "No module named src" error by looking at the project root
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+# ROOT PATH FIX: Ensures sibling directories like 'workflows' are accessible
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from langgraph.graph import StateGraph, END, START
 from workflows.state import AgentState
@@ -16,49 +15,49 @@ from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
 
 # -------------------------
-# 2. Resilient Knowledge Base Initialization
+# 1. Resilient Knowledge Base Initialization
 # -------------------------
 def get_vectorstore():
     """
-    DECOUPLED LOADER: Prevents the app from crashing during boot.
-    If Qdrant is down, the app stays alive so you can check logs.
+    Prevents Exit Code 3. If the connection fails, the app still boots
+    allowing you to debug via logs instead of the container just dying.
     """
     url = os.getenv("QDRANT_URL")
     api_key = os.getenv("QDRANT_KEY")
     
-    # Validation check to catch empty variables before they crash the client
     if not url or "qdrant.io" not in url:
-        print("⚠️ QDRANT_URL is missing or malformed in AWS Environment.")
+        print("⚠️ QDRANT_URL is not configured correctly.")
         return None
 
     try:
-        # Port 6333 is required for Qdrant Cloud Python Client
+        # Initializing here ensures port 6333 is respected for Cloud
         vs = QdrantVectorStore.from_existing_collection(
             embedding=OpenAIEmbeddings(),
             collection_name="pubmed_docs", 
             url=url,
             api_key=api_key,
         )
-        print("✅ PROD: Qdrant Handshake Successful")
+        print("✅ SUCCESS: Qdrant Handshake Completed")
         return vs
     except Exception as e:
-        # This print will finally show up in your "Application Logs"
-        print(f"❌ PROD ERROR: Qdrant Connection Failed -> {e}")
+        print(f"❌ CONNECTION FAILED: Qdrant is unreachable: {e}")
         return None
 
-# Initialize as a global variable but safely handled via the function
+# Global instance for nodes to utilize
 vectorstore = get_vectorstore()
 
 # -------------------------
-# 3. Initialize the State Machine
+# 2. Initialize the State Machine
 # -------------------------
 workflow = StateGraph(AgentState)
 
+# Define nodes
 workflow.add_node("local_research", researcher_node) 
 workflow.add_node("auditor", auditor_node)
 workflow.add_node("web_research", web_search_node)
 workflow.add_node("increment_retry", lambda state: {"retry_count": state.get("retry_count", 0) + 1})
 
+# Build the flow logic
 workflow.add_edge(START, "local_research")
 workflow.add_edge("local_research", "auditor")
 
