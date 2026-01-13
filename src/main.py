@@ -162,3 +162,4 @@ async def analyze_claim(request: Request, payload: ClaimRequest, api_key: str = 
 @app.get("/metrics")
 async def metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+# Force Sync 1.0
