@@ -68,4 +68,4 @@ workflow.add_edge("increment_retry", "local_research")
 # After web search, audit again to verify internet findings
 workflow.add_edge("web_research", "auditor")
 
-app = workflow.compile()
+app = workflow.compile()# Force Rebuild Mon Jan 12 19:06:04 CST 2026
