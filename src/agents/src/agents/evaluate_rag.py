@@ -72,7 +72,7 @@ p95_lat = np.percentile(search_latencies, 95) * 1000
 
 print(
     f"""
-📈 --- VALIDATED EVALUATION REPORT ---
+--- VALIDATED EVALUATION REPORT ---
 Precision@5: {precision:.2f}  (Signal-to-Noise Ratio)
 Recall@5:    {recall:.2f}     (Search Success Rate - MUST BE 0-1)
 F1 Score:    {f1:.2f}         (Retrieval Balance)

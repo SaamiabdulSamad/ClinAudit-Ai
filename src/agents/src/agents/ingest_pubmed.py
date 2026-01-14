@@ -27,7 +27,7 @@ client.recreate_collection(
     ),
 )
 
-print("🚀 Starting High-Volume Ingestion (Target: ~25,000+ chunks)...")
+print("Starting High-Volume Ingestion (Target: ~25,000+ chunks)...")
 dataset = load_dataset(
     "ccdv/pubmed-summarization", "section", split="train", streaming=True
 )
@@ -41,7 +41,7 @@ for i, paper in enumerate(papers):
     for chunk in chunks:
         all_docs.append({"text": chunk, "metadata": {"source": f"pubmed_{i}"}})
 
-print(f"📦 Total Chunks: {len(all_docs)}. Ingesting in batches...")
+print(f"Total Chunks: {len(all_docs)}. Ingesting in batches...")
 for i in tqdm(range(0, len(all_docs), BATCH_SIZE)):
     batch = all_docs[i : i + BATCH_SIZE]
     QdrantVectorStore.from_texts(
@@ -53,4 +53,4 @@ for i in tqdm(range(0, len(all_docs), BATCH_SIZE)):
         collection_name=COLLECTION_NAME,
     )
 
-print(f"✅ SUCCESS: {len(all_docs)} shards live with Optimized Latency.")
+print(f"SUCCESS: {len(all_docs)} shards live with Optimized Latency.")
