@@ -22,7 +22,7 @@ def routing_logic(state: AgentState) -> Literal["retry_local", "tavily_search", 
     # High confidence or the Auditor has clearly confirmed a 'FAIL' (like our 0.00 score)
     # Note: If the score is 0.00 but the Auditor verified the code is NON-COVERED, we finalize.
     if faithfulness >= 0.80 or (faithfulness == 0.0 and verdict == "FAIL"):
-        print("   ✅ DECISION: FINALIZE (Audit complete and verified)")
+        print("   DECISION: FINALIZE (Audit complete and verified)")
         return "finalize"
     
     # CASE 2: The "Self-Correction" Path

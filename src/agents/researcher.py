@@ -57,7 +57,7 @@ def researcher_node(state: AgentState):
         for i, (context, source) in enumerate(combined_evidence):
             evidence_text += f"Source {i+1} [{source}]:\n{context}\n\n"
         
-        print(f"   ✅ Found {len(search_result.contexts)} relevant chunks.")
+        print(f"   Found {len(search_result.contexts)} relevant chunks.")
         return {
             "messages": [AIMessage(content=evidence_text)],
             "retrieved_docs": [c for c, s in combined_evidence],

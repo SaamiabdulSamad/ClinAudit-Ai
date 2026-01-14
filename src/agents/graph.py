@@ -37,7 +37,7 @@ def get_vectorstore():
             url=url,
             api_key=api_key,
         )
-        print("✅ SUCCESS: Qdrant Handshake Completed")
+        print("SUCCESS: Qdrant Handshake Completed")
         return vs
     except Exception as e:
         print(f"❌ CONNECTION FAILED: Qdrant is unreachable: {e}")

@@ -15,7 +15,7 @@ def routing_logic(state: AgentState):
     # OPTION 1: Success (Pass or clear Fail)
     # If the score is high, it means the Auditor is CONFIDENT in its finding.
     if score >= 0.8:
-        print("   ✅ Goal Met: Auditor is confident. Finalizing...")
+        print("   Goal Met: Auditor is confident. Finalizing...")
         return "finalize"
 
     # OPTION 2: Try Local Again (The Corrective Loop)

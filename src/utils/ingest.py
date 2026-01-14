@@ -26,7 +26,7 @@ def run_ingestion():
     chunks = loader.load_and_chunk_pdf(pdf_path)
 
     # 3. Generate High-Accuracy Embeddings
-    print(f"🧠 Embedding {len(chunks)} chunks with 'text-embedding-3-large'...")
+    print(f"Embedding {len(chunks)} chunks with 'text-embedding-3-large'...")
     embeddings_response = client.embeddings.create(
         input=chunks,
         model="text-embedding-3-large"
@@ -47,10 +47,10 @@ def run_ingestion():
     ]
 
     # 5. Push to Local Qdrant
-    print("🚀 Uploading evidence to Qdrant...")
+    print("Uploading evidence to Qdrant...")
     vs.upsert(ids=ids, vectors=vectors, payloads=payloads)
     
-    print(f"✅ Success! Your Auditor now has {len(chunks)} verified medical rules.")
+    print(f"Success! Your Auditor now has {len(chunks)} verified medical rules.")
 
 if __name__ == "__main__":
     run_ingestion()

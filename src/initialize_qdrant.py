@@ -16,7 +16,7 @@ def initialize_medical_db():
     exists = any(c.name == collection_name for c in collections)
     
     if not exists:
-        print(f"🚀 Creating collection: {collection_name}...")
+        print(f"Creating collection: {collection_name}...")
         client.create_collection(
             collection_name=collection_name,
             vectors_config=models.VectorParams(
@@ -24,7 +24,7 @@ def initialize_medical_db():
                 distance=models.Distance.COSINE # Best for text similarity
             )
         )
-        print("✅ Collection created successfully!")
+        print("Collection created successfully!")
     else:
         print(f"ℹ️ Collection '{collection_name}' already exists. Skipping.")
 

@@ -57,7 +57,7 @@ def ingest_medical_policy(pdf_path: str, policy_category: str):
             
     # Batch upload to Qdrant
     client.upsert(collection_name=COLLECTION_NAME, points=points)
-    print(f"✅ Successfully ingested {len(points)} chunks from {pdf_path}")
+    print(f"Successfully ingested {len(points)} chunks from {pdf_path}")
 
 # Example Usage:
 # ingest_medical_policy("data/medicare_claims_manual.pdf", "Insurance Compliance")

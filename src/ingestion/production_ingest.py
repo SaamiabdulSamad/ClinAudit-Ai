@@ -27,7 +27,7 @@ def process_policy_directory(directory_path: str):
                 "source": filename
             }
             
-            print(f"📦 Processing {filename} with Production Metadata...")
+            print(f"Processing {filename} with Production Metadata...")
             pages = loader.load()
             chunks = text_splitter.split_documents(pages)
             
@@ -45,4 +45,4 @@ def process_policy_directory(directory_path: str):
                 ))
             
             client.upsert(collection_name=COLLECTION_NAME, points=points)
-    print("✅ Scale-ready Library Updated.")
+    print("Scale-ready Library Updated.")

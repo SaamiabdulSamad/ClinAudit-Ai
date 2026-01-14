@@ -30,7 +30,7 @@ TEST_CASES = [
 
 async def run_evaluation():
     results = []
-    print(f"🚀 Starting FactGuard Evaluation at {datetime.now()}")
+    print(f"Starting FactGuard Evaluation at {datetime.now()}")
     print("-" * 50)
 
     for case in TEST_CASES:
@@ -69,12 +69,12 @@ async def run_evaluation():
     print("FINAL EVALUATION REPORT")
     print("="*50)
     print(df.to_markdown(index=False))
-    print(f"\n📈 Overall Accuracy: {accuracy:.1f}%")
+    print(f"\nOverall Accuracy: {accuracy:.1f}%")
     print(f"⭐ Average Faithfulness: {avg_faithfulness:.2f}")
     
     # Save to CSV for your portfolio
     df.to_csv("eval_report_latest.csv", index=False)
-    print("\n✅ Report saved to eval_report_latest.csv")
+    print("\nReport saved to eval_report_latest.csv")
 
 if __name__ == "__main__":
     asyncio.run(run_evaluation())

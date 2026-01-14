@@ -23,7 +23,7 @@ if st.button("Run Audit"):
                 
                 with col2:
                     st.success("Audit Results")
-                    status = "✅ CLEAN" if data["audit_passed"] else "❌ FLAG FOR REVISION"
+                    status = "CLEAN" if data["audit_passed"] else "❌ FLAG FOR REVISION"
                     st.metric("Final Status", status)
             except Exception as e:
                 st.error("Is your FastAPI backend running? Run 'uv run python src/main.py' first.")
